@@ -3703,6 +3703,10 @@ function heroGrid(cls,helm,dir){const key=cls+'|'+helm+'|'+dir;if(HERO_CACHE[key
  else if(dir==='side')for(let y=0;y<9;y++)for(let x=0;x<7;x++){if(g[y][x]==='V'||g[y][x]==='v')g[y][x]='H'}
  const body=back?C.b:C.f;body.forEach((r,i)=>{const row=mir(r);for(let x=0;x<16;x++)if(row[x]!=='.')g[9+i][x]=row[x]});
  ((back?C.pb:C.pf)||[]).forEach(([x,y,ch])=>{g[y][x]=ch});
+ if(dir==='side'){ // profile: drop the far arm, pull the far leg behind the near one, push the visor forward
+  for(let y=9;y<20;y++)for(let x=12;x<16;x++)if(!(C.robe&&(C.pf||[]).some(([px,py])=>px===x&&py===y)))g[y][x]='.';
+  for(let y=16;y<20;y++){const row=g[y].slice();for(let x=8;x<12;x++){if(row[x]!=='.'&&g[y][x-2]==='.')g[y][x-2]=row[x];g[y][x]='.'}}
+  for(let y=0;y<9;y++){const r=g[y];for(let x=12;x>7;x--)if((r[x-1]==='V'||r[x-1]==='v')&&r[x]==='h'){r[x]=r[x-1]}}}
  // outline grid (18x22)
  const o=Array.from({length:22},()=>new Array(18).fill('.'));
  for(let y=0;y<20;y++)for(let x=0;x<16;x++)o[y+1][x+1]=g[y][x];
