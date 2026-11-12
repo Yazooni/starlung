@@ -131,6 +131,7 @@ h1,h2,h3{font-family:var(--f-disp);text-wrap:balance;line-height:1.15;margin:0}
 .chead .who{flex:1;min-width:0}
 .chead .who b{font-family:var(--f-disp);font-size:17px;display:block}
 .console.scan{position:relative}.console.scan::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:8px;background:repeating-linear-gradient(0deg,rgba(90,212,255,.06) 0 1px,transparent 1px 3px);animation:scanmove 6s linear infinite}@keyframes scanmove{to{background-position:0 60px}}
+.duel{display:block;width:100%;height:150px;border-bottom:1px solid var(--line);background:#070b1c}@media (max-width:600px){.duel{height:112px}}
 .hpbar{height:9px;background:#0a0f24;border:1px solid var(--line);margin-top:6px;border-radius:2px;overflow:hidden}
 .hpbar>i{display:block;height:100%;background:var(--laser);transition:width .35s}
 .cbody{padding:16px}
@@ -306,9 +307,10 @@ textarea{width:100%;min-height:90px;font-family:ui-monospace,Consolas,monospace;
       <div class="chipsel" id="simLecs"></div>
       <div class="row" style="margin-top:10px"><button class="btn" id="simAllOn">Select all</button><button class="btn" id="simAllOff">Clear</button></div>
       <div class="row" style="margin-top:14px">
-        <label>Mode <select id="simMode"><option value="smart">Smart: unseen + missed first</option><option value="unseen">Unseen only</option><option value="missed">Missed only</option><option value="all">Everything (random)</option><option value="off">Official only</option></select></label>
+        <label>Mode <select id="simMode"><option value="smart">Smart: unseen + missed first</option><option value="unseen">Unseen only</option><option value="missed">Missed only</option><option value="all">Everything (random)</option><option value="off">Official only</option><option value="ly">Stat trivia only (low-yield bonus pool)</option></select></label>
         <label>Questions <select id="simN"><option>10</option><option selected>20</option><option>40</option><option>80</option><option value="9999">All</option></select></label>
         <label class="row" style="gap:6px"><input type="checkbox" id="simExam"> Exam mode (explanations at the end)</label>
+        <label class="row" style="gap:6px" title="Mortality, survival and percentage questions that are not tied to a lecture objective or official question. The facts are still in Study Notes."><input type="checkbox" id="simLY"> Include low-yield stat trivia (<span id="simLYn">0</span>)</label>
       </div>
       <div class="row" style="margin-top:14px"><button class="btn pri" id="simGo">Launch simulation</button><span class="muted tiny" id="simCount"></span></div>
     </div>
@@ -3361,7 +3363,10 @@ const shuffle=(a,r=Math.random)=>{a=a.slice();for(let i=a.length-1;i>0;i--){cons
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const LBY=Object.fromEntries(LEC.map(l=>[l.id,l]));
 const QBY=Object.fromEntries(Q.map(q=>[q.id,q]));
-const QL={}; Q.forEach(q=>(QL[q.l]=QL[q.l]||[]).push(q));
+// v10: pure epidemiology/prognosis stat trivia not tied to a lecture objective or official question.
+// Kept (facts stay in Study Notes) but pulled from planets, commanders, mastery and default Practice Quiz.
+const LOWYIELD=new Set(["q302_26","q305_1","q305_2","q305_3","q305_36","q307_15","q308_13","q309_16","q309_36","q311_27","q312_13","q314_15","q318_18","q318_25","q318_29","q318_34","q319_8","q319_16","q321_6","q321_21","q322_8","q323_1","q323_5","q323_21","q324_1","q324_18","q324_27","q324_30"]);Q.forEach(q=>{if(LOWYIELD.has(q.id)&&!q.o)q.ly=1});
+const QL={}; Q.forEach(q=>{if(!q.ly)(QL[q.l]=QL[q.l]||[]).push(q)});
 const isReady=l=>!l.pend && (QL[l.id]||[]).filter(q=>!q.o).length>=8 && (SEC[l.id]||[]).length>0;
 const EXAM_LECS=LEC.filter(l=>!l.fin);
 
@@ -3382,6 +3387,9 @@ const SOUNDPACK={
  sfx_fanfare(){[[523,0],[523,.1],[523,.2],[659,.32],[784,.5],[1047,.68]].forEach(([f,w])=>tone(f,.16,'square',.05,w))}};
 const SFX={
  blaster(){tone(1200,.18,'sawtooth',.05,0,-1000)},
+ saber(){noise(.14,.045);tone(150,.24,'sawtooth',.045,0,520);tone(620,.16,'sine',.035,.05,-380)},
+ clash(){noise(.07,.08);tone(1600,.07,'square',.03);tone(2400,.05,'sine',.025,.02)},
+ ignite(){tone(90,.3,'sawtooth',.035,0,140);noise(.2,.02)},
  right(){(SOUNDPACK[(S&&S.eq&&S.eq.sfx)||'sfx_chime']||SOUNDPACK.sfx_chime)()},
  wrong(){tone(180,.25,'sawtooth',.06,0,-90);noise(.12,.05)},
  coin(){tone(988,.06,'square',.04);tone(1319,.12,'square',.04,.06)},
@@ -3727,6 +3735,23 @@ function drawHeroBox(g,left,top,px,dir,frame,t,eq=S.eq){
   if(ch==='V'||ch==='E'){g.save();g.shadowColor=col;g.shadowBlur=px*2.5;g.fillStyle=col;g.fillRect(left+x*px,top+yy*px,px,px);g.restore()}
   else{g.fillStyle=col;g.fillRect(left+x*px,top+yy*px,px+.3,px+.3)}}}
 function drawHero(g,x,y,px,dir,frame,t,eq=S.eq){drawHeroBox(g,x-3*px,y-6*px,px,dir,frame,t,eq)}
+// ===== v10: visible saber =====
+function bladeCol(eq=S.eq){return (SHOPBY[eq.blade]||SHOPBY.blade_azure).col}
+// grip at (x,y); ang radians (0 = pointing right, -PI/2 = up); u = pixel unit; len in units
+function drawSaber(g,x,y,ang,len,u,col,t,on=1){g.save();g.translate(x,y);g.rotate(ang);
+ g.fillStyle='#0a0d17';g.fillRect(-3.5*u,-1.5*u,6*u,3*u);
+ g.fillStyle='#5b6176';g.fillRect(-3*u,-u,4.5*u,2*u);g.fillStyle='#b8bfd2';g.fillRect(-2*u,-u,u,2*u);g.fillRect(0,-u,.6*u,2*u);
+ g.fillStyle='#2a2e3d';g.fillRect(1.5*u,-1.5*u,u,3*u);
+ if(on){const fl=.85+.12*Math.sin(t/45)+.05*Math.sin(t/13);g.shadowColor=col;g.shadowBlur=7*u*fl;
+  g.globalAlpha=.45;g.fillStyle=col;g.fillRect(2.5*u,-1.4*u,len*u,2.8*u);
+  g.globalAlpha=1;g.fillRect(2.5*u,-u,len*u,2*u);g.shadowBlur=0;
+  g.fillStyle='#ffffff';g.globalAlpha=.85;g.fillRect(2.5*u,-.45*u,(len-.7)*u,.9*u);g.globalAlpha=1}
+ g.restore()}
+// held saber on the walking map. X,Y are the same args drawHero receives.
+const HELD={down:{hx:14.6,hy:14.6,a:1.15},up:{hx:3.4,hy:14.6,a:Math.PI-1.15},right:{hx:10.5,hy:14.2,a:-.75},left:{hx:7.5,hy:14.2,a:Math.PI+.75}};
+function drawHeldSaber(g,X,Y,px,dir,t,walking){const h=HELD[dir]||HELD.down;const sway=walking?Math.sin(t/110)*.08:Math.sin(t/700)*.04;
+ drawSaber(g,X-3*px+h.hx*px,Y-6*px+h.hy*px,h.a+sway,10,px*.8,bladeCol(),t)}
+
 
 function drawDroid(g,x,y,px,id,t){if(!id||id==='droid_none')return;const col=SHOPBY[id].col;const bob=Math.round(Math.sin(t/200)*1)*px;y+=bob;
  g.fillStyle=col;
@@ -3743,7 +3768,7 @@ function itemPreview(cv,it){const g=cv.getContext('2d');cv.width=48;cv.height=40
  else if(it.c==='sfx'||it.c==='fx'){g.textAlign='center';g.font='22px serif';g.fillStyle=it.c==='sfx'?'#ffb547':'#b294ff';g.fillText(it.c==='sfx'?'♫':({fx_lamp:'☼',fx_aura:'◎',fx_snow:'❄',fx_embers:'✺',fx_confetti:'✦',fx_coinrain:'◈',fx_shake:'≋',fx_scan:'▤',fx_meteor:'☄',fx_halo:'✧'}[it.id]||'✦'),24,29)}
  else if(it.c==='droid'){drawDroid(g,18,14,2,it.id,t)}
  else if(it.c==='ship'){drawShip(g,24,20,1.3,it.id,0)}
- else if(it.c==='blade'){g.fillStyle='#7a7f93';g.fillRect(8,24,8,4);g.shadowColor=it.col;g.shadowBlur=8;g.fillStyle=it.col;g.fillRect(16,25,26,2);g.shadowBlur=0}
+ else if(it.c==='blade'){drawSaber(g,9,30,-.55,15,1.7,it.col,t)}
  else if(it.c==='trail'){if(it.col)for(let i=0;i<8;i++){g.fillStyle=it.col;g.globalAlpha=1-i/9;g.fillRect(6+i*5,18+Math.sin(i)*5,3,3)}g.globalAlpha=1}
  else{g.fillStyle=it.c==='up'?'#5ad4ff':'#ffb547';g.font='16px Silkscreen, monospace';g.textAlign='center';g.fillText(it.c==='up'?'⚙':'❝',24,26)}}
 
@@ -3971,7 +3996,8 @@ function drawPlanet(t){const c=$('#pcan'),g=c.getContext('2d');const dpr=deviceP
  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(P.px*ts-cx+ts/2,P.py*ts-cy+ts*.95,ts*.3,ts*.1,0,0,7);g.fill();
  const hx=P.px*ts-cx+ts/2,hy=P.py*ts-cy+ts/2;
  if(fxOn('fx_aura')){const gr=g.createRadialGradient(hx,hy+ts*.35,1,hx,hy+ts*.35,ts*.9);const hc=`hsla(${(t/12)%360},90%,65%,`;gr.addColorStop(0,hc+(.45+.2*Math.sin(t/250))+')');gr.addColorStop(1,hc+'0)');g.fillStyle=gr;g.fillRect(hx-ts,hy-ts*.6,ts*2,ts*2)}
- drawHero(g,Math.round(P.px*ts-cx+2*px),Math.round(P.py*ts-cy),px,P.dir,P.frame,t);
+ {const HX=Math.round(P.px*ts-cx+2*px),HY=Math.round(P.py*ts-cy),mv=!!(P.moving||P.frame);if(P.dir==='up')drawHeldSaber(g,HX,HY,px,P.dir,t,mv);
+  drawHero(g,HX,HY,px,P.dir,P.frame,t);if(P.dir!=='up')drawHeldSaber(g,HX,HY,px,P.dir,t,mv)}
  if(fxOn('fx_halo')){g.strokeStyle=`rgba(255,240,170,${.7+.3*Math.sin(t/200)})`;g.lineWidth=Math.max(1.5,px);g.beginPath();g.ellipse(hx,hy-ts*.88,ts*.3,ts*.09,0,0,7);g.stroke();for(let k=0;k<3;k++){const a=t/400+k*2.1;g.fillStyle='rgba(255,250,200,.85)';g.fillRect(hx+Math.cos(a)*ts*.45,hy-ts*.4+Math.sin(a*1.3)*ts*.25,px,px)}}
  drawWeather(g,t,vw,vh,ts);
  if(fxOn('fx_lamp')){const fl=1+.05*Math.sin(t/90)+.03*Math.sin(t/37);const gr=g.createRadialGradient(hx,hy,ts*.5,hx,hy,ts*3.6*fl);gr.addColorStop(0,'rgba(255,190,110,0.06)');gr.addColorStop(.45,'rgba(10,8,20,0.35)');gr.addColorStop(1,'rgba(4,4,12,0.9)');g.fillStyle=gr;g.fillRect(0,0,vw,vh);
@@ -4005,7 +4031,7 @@ new MutationObserver(()=>{if($('#scrim').hidden&&P&&P.lock&&$('#quiz').hidden)P.
 
 function encounter({sentry}){const l=P.l,pool=QL[l.id];P.lock=true;P.held=null;const kind=sentry?sentry.kind:Math.floor(Math.random()*ENEMIES.length);SFX.alarm();
  const q=pickQs(pool,1)[0];const z=zoneOf(P.x);
- runQuiz({mode:'enc',enemy:kind,title:ENEMIES[kind].n,list:[q],onAnswer:(q,ok)=>{if(ok){SFX.blaster();if(sentry)P.ps.def[sentry.id]=1;if(z<NZ-1||!P.ps.boss){P.ps.zc[z]=(P.ps.zc[z]||0)+1}
+ runQuiz({mode:'enc',enemy:kind,title:ENEMIES[kind].n,list:[q],onAnswer:(q,ok)=>{if(ok){SFX.saber();if(sentry)P.ps.def[sentry.id]=1;if(z<NZ-1||!P.ps.boss){P.ps.zc[z]=(P.ps.zc[z]||0)+1}
     if(z<NZ-1&&P.ps.z===z&&P.ps.zc[z]>=QUOTA){P.ps.z=z+1;S.st.zones++;touchDay();S.day.zone++;gain(40,20);setTimeout(()=>{toast('FORCE FIELD DOWN · +40◈','med');SFX.door()},300)}}
    else{P.ps.sh--;if(sentry){/* knocked back */}}
    save()},
@@ -4019,27 +4045,85 @@ function bossIntro(){const l=P.l,ps=P.ps;P.lock=true;SFX.boss();
  $('#bNo').onclick=()=>{closeSheet();P.lock=false};
  $('#bGo').onclick=()=>{closeSheet();P.lock=true;const pool=QL[l.id];const weak=pool.slice().sort((a,b)=>{const s=q=>{const r=S.qs[q.id];return !r?2:r.l===0?3:r.c/r.n<1?1.5:0};return s(b)-s(a)||Math.random()-.5});
   const list=shuffle(weak.slice(0,14)).slice(0,12);let hp=6,lost=0;
-  runQuiz({mode:'boss',boss:l,title:l.boss,list,hp,onAnswer:(q,ok,ctl)=>{if(ok){hp--;SFX.blaster();ctl.hit(hp/6)}else{ps.sh--;lost++;ctl.hurt()}save();if(hp<=0||ps.sh<=0)ctl.stop()},
+  runQuiz({mode:'boss',boss:l,title:l.boss,list,hp,onAnswer:(q,ok,ctl)=>{if(ok){hp--;SFX.saber();ctl.hit(hp/6)}else{ps.sh--;lost++;ctl.hurt()}save();if(hp<=0||ps.sh<=0)ctl.stop()},
    onEnd:()=>{if(hp<=0){const first=!ps.boss;ps.boss=1;const cr=first?220:50;gain(cr,first?150:40);if(first){S.st.boss++;S.keys++;touchDay();S.day.boss++}if(lost===0)S.st.perfect++;SFX.win();checkMedals();save();
      openSheet(`<div class="reveal"><div class="eyebrow" style="color:var(--ok)">Planet liberated</div><div class="big">${esc(l.p)} is free</div><p>${esc(l.boss)} retreats in disgrace.</p><p class="reward">+${cr}◈ ${first?'· +1 crate key ⌘ · +150 XP':''}${lost===0?' · FLAWLESS':''}</p><button class="btn pri" id="bOk">Continue</button></div>`);$('#bOk').onclick=()=>{closeSheet();P.lock=false;updPHud()}}
     else{P.lock=false;if(ps.sh<=0)medevac();else pmsg('You disengaged. The commander regroups at full strength.')}}})}}
 
+
+// ===== v10: duel stage (hero + saber vs enemy; strike on correct, enemy lunge on wrong) =====
+let DUEL=null;const RM=false; // the strike animation is the point of this feature, so it always plays
+const ease=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3), easeIn=x=>Math.pow(Math.max(0,Math.min(1,x)),2);
+function duelStart(z){const cv=$('#duel');if(!cv)return;const ec=document.createElement('canvas');const boss=z.mode==='boss';
+ if(boss)drawEnemy(ec,0,BOSSCOL(z.boss));else drawEnemy(ec,z.enemy);
+ const keepDead=DUEL&&DUEL.z===z&&DUEL.dead;
+ DUEL=Object.assign(DUEL&&DUEL.z===z?DUEL:{parts:[],float:[],trail:[]},{cv,z,ec,boss,an:null,dead:keepDead,flashT:-1e9,hurtT:-1e9,shakeT:-1e9});
+ if(!DUEL.raf)DUEL.raf=requestAnimationFrame(duelLoop)}
+function duelPlay(ok,kill){if(!DUEL)return;const t=performance.now();DUEL.an={ok,kill,t0:t,hit:false};DUEL.trail=[];if(!ok)setTimeout(()=>{},0)}
+function duelSpark(x,y,col,n,spd){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=(.4+Math.random())*spd;DUEL.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,c:Math.random()<.4?'#ffffff':col,life:400+Math.random()*350,t0:performance.now(),s:Math.random()<.3?2:1})}}
+function duelShatter(ex,ey,es){const ec=DUEL.ec,w=ec.width,h=ec.height;let d;try{d=ec.getContext('2d').getImageData(0,0,w,h).data}catch(e){return}
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;if(d[i+3]<10)continue;const cx=x-w/2,cy=y-h/2;DUEL.parts.push({x:ex+cx*es,y:ey+cy*es,vx:cx*.18+(Math.random()-.5)*1.2+1,vy:cy*.18-Math.random()*1.6,c:`rgb(${d[i]},${d[i+1]},${d[i+2]})`,life:700+Math.random()*500,t0:performance.now(),s:es,grav:1})}}
+function duelLoop(t){if(!DUEL)return;if(!QZ||!DUEL.cv.isConnected){DUEL.raf=0;if(!QZ)DUEL=null;return}DUEL.raf=requestAnimationFrame(duelLoop);
+ const D=DUEL,cv=D.cv,dpr=devicePixelRatio||1,cw=cv.clientWidth,ch=cv.clientHeight;if(!cw||!ch)return;
+ const W=Math.round(cw*dpr),H=Math.round(ch*dpr);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ const g=cv.getContext('2d'),s=H/64,LW=W/s,GY=56;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);
+ let shx=0;const sk=t-D.shakeT;if(sk<200&&!RM)shx=(Math.random()-.5)*3*(1-sk/200);
+ g.setTransform(s,0,0,s,shx*s,0);g.imageSmoothingEnabled=false;
+ // backdrop: biome tinted sky, stars, ground
+ const B=(P&&P.l&&BIOME[P.l.b])||BIOME.ash;const sky=g.createLinearGradient(0,0,0,GY);sky.addColorStop(0,'#050817');sky.addColorStop(1,B.w||'#0b1020');g.fillStyle=sky;g.fillRect(-4,0,LW+8,GY);
+ for(let i=0;i<40;i++){const x=(i*73.13)%LW,y=(i*29.7)%(GY-14);g.globalAlpha=.25+.35*Math.abs(Math.sin(t/900+i));g.fillStyle='#cfd8ff';g.fillRect(x,y,.6,.6)}g.globalAlpha=1;
+ g.fillStyle=B.o||'#1b2031';g.fillRect(-4,GY,LW+8,64-GY);g.fillStyle=B.oh||'#39436b';g.fillRect(-4,GY,LW+8,1);
+ for(let x=0;x<LW;x+=7){g.fillStyle=(B.f&&B.f[1])||'#262a3c';g.fillRect(x+((x*13)%5),GY+3+((x*7)%4),2,1)}
+ // layout
+ const hs=1.55,HW=18*hs,HH=22*hs,homeX=Math.max(8,LW*.2),eHome=Math.min(LW-14,LW*.74);
+ const es=D.boss?2.6:2.5,ew=D.ec.width*es,eh=D.ec.height*es;
+ let hx=homeX,ang=-.95+Math.sin(t/520)*.07,ex=eHome,eFlash=false,heroRed=false,eAlpha=1;const bob=Math.sin(t/430)>0?0:-.6;
+ const a=D.an;
+ if(a){const p=t-a.t0;
+  if(a.ok){const tx=eHome-ew/2-HW*.62;const dash=RM?0:ease(p/170),back=ease((p-470)/280);hx=homeX+(tx-homeX)*dash*(1-back);
+   if(p<170)ang=-.95+(-2.75+.95)*ease(p/170);else if(p<300){ang=-2.75+(1.05+2.75)*easeIn((p-170)/130);D.trail.push(ang);if(D.trail.length>9)D.trail.shift()}else if(p<470)ang=1.05;else ang=1.05+(-.95-1.05)*ease((p-470)/280);
+   if(p>=235&&!a.hit){a.hit=true;D.flashT=t;D.shakeT=t;SFX.clash();const cx=eHome,cy=GY-eh/2-4;duelSpark(cx-ew*.25,cy,bladeCol(),RM?6:22,1.6);
+    const combo=S.combo||0;D.float.push({x:cx,y:Math.max(12,cy-eh/2-2),txt:a.kill?(D.boss?'VICTORY':'DESTROYED'):combo>=5?'CRIT ×'+combo:'HIT!',c:a.kill?'#62e6a0':combo>=5?'#ffb547':'#ffffff',t0:t});
+    if(a.kill)setTimeout(()=>{if(DUEL===D){duelShatter(eHome,GY-eh/2-4,es);D.dead=true;D.shakeT=performance.now();SFX.crate&&noise(.25,.06)}},140)}
+   if(p>235&&p<420&&!D.dead)ex=eHome+6*ease((p-235)/90)*(1-ease((p-330)/90));
+   if(p>760){D.an=null;D.trail=[]}}
+  else{const lunge=RM?0:ease(p/160),ret=ease((p-260)/300);ex=eHome-(eHome-homeX-HW*.9-ew*.4)*lunge*(1-ret);
+   if(p>=160&&!a.hit){a.hit=true;D.hurtT=t;D.shakeT=t;const cx=homeX+HW/2,cy=GY-HH*.55;duelSpark(cx,cy,'#7fd4ff',RM?4:14,1.2);D.float.push({x:cx,y:GY-HH-4,txt:'−1 ⛨',c:'#ff5468',t0:t})}
+   const hk=t-D.hurtT;if(hk<380){hx=homeX-5*Math.sin(Math.PI*Math.min(1,hk/380));heroRed=hk<260&&Math.floor(hk/65)%2===0;ang=-1.9+hk/380*.95}
+   if(p>620)D.an=null}}
+ eFlash=t-D.flashT<150;
+ // shadows
+ g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(hx+HW/2,GY+1,HW*.33,1.6,0,0,7);g.fill();
+ // enemy
+ if(!D.dead){const hov=Math.sin(t/380)*1.2;const ey=GY-eh-3+hov;g.beginPath();g.fillStyle='rgba(0,0,0,.35)';g.ellipse(ex,GY+1,ew*.35,1.6,0,0,7);g.fill();
+  g.save();if(eFlash){g.filter='brightness(4) saturate(0)'}g.globalAlpha=eAlpha;g.drawImage(D.ec,ex-ew/2,ey,ew,eh);g.restore();
+  if(eFlash){g.save();g.strokeStyle='#ffffff';g.shadowColor=bladeCol();g.shadowBlur=6;g.lineWidth=1.4;g.globalAlpha=1-(t-D.flashT)/150;g.beginPath();g.moveTo(ex-ew*.55,ey+eh*.1);g.lineTo(ex+ew*.5,ey+eh*.9);g.stroke();g.restore()}}
+ // hero (side view, facing the enemy) + arm + saber
+ const top=GY-HH+bob;g.save();if(heroRed)g.filter='sepia(1) saturate(6) hue-rotate(-50deg) brightness(1.1)';drawHeroBox(g,hx,top,hs,'right',0,t);g.restore();
+ const shX=hx+9.5*hs,shY=top+12*hs,gx=shX+Math.cos(ang)*3.6*hs*.8,gy=shY+Math.sin(ang)*3.6*hs*.8+1.5;
+ const pc=((SHOPBY[S.eq.suit]||SHOPBY.suit_rebel).col);g.strokeStyle='#0a0d17';g.lineCap='round';g.lineWidth=3.6;g.beginPath();g.moveTo(shX,shY);g.lineTo(gx,gy);g.stroke();g.strokeStyle=pc[0];g.lineWidth=2.2;g.beginPath();g.moveTo(shX,shY);g.lineTo(gx,gy);g.stroke();
+ if(D.an&&D.an.ok&&t-D.an.t0<470&&D.trail.length>1){const col=bladeCol();g.save();g.shadowColor=col;g.shadowBlur=8;for(let i=1;i<D.trail.length;i++){g.globalAlpha=.08+.5*i/D.trail.length;g.fillStyle=i===D.trail.length-1?'#ffffff':col;const a0=D.trail[i-1],a1=D.trail[i];g.beginPath();g.arc(gx,gy,18.5,a0,a1,a1<a0);g.arc(gx,gy,9+i*.6,a1,a0,a1>=a0);g.closePath();g.fill()}g.restore()}
+ drawSaber(g,gx,gy,ang,15,.95,bladeCol(),t);
+ // particles + floating text
+ D.parts=D.parts.filter(q=>{const k=t-q.t0;if(k>q.life)return false;const f=k/16;g.globalAlpha=1-k/q.life;g.fillStyle=q.c;g.fillRect(q.x+q.vx*f,q.y+q.vy*f+(q.grav?.012*f*f:.006*f*f),q.s*.8,q.s*.8);return true});g.globalAlpha=1;
+ g.textAlign='center';g.font='bold 7px Silkscreen, monospace';D.float=D.float.filter(q=>{const k=t-q.t0;if(k>900)return false;g.globalAlpha=1-Math.max(0,(k-500)/400);g.fillStyle='#0a0d17';g.fillText(q.txt,q.x+.6,q.y-k/45+.6);g.fillStyle=q.c;g.fillText(q.txt,q.x,q.y-k/45);return true});g.globalAlpha=1}
 // ================= QUIZ CONSOLE =================
 let QZ=null;
 function runQuiz(o){QZ=Object.assign({i:0,res:[],answered:false,stopped:false},o);QZ.exam=o.mode==='sim'&&o.exam;$('#quiz').hidden=false;document.body.style.overflow='hidden';showQ()}
 function endQuiz(){const z=QZ;setTimeout(()=>{if(PENDING_REMIND&&$('#scrim').hidden){PENDING_REMIND=false;openSaveHelp(`<div class="notice" style="margin-bottom:12px"><b>Checkpoint.</b> Grab a fresh save code so this progress is safe.</div>`)}},400);$('#quiz').hidden=true;document.body.style.overflow=P?'hidden':'';QZ=null;renderHud();if(z.onEnd)z.onEnd(z.res);if(z.mode==='sim'||z.mode==='off')showResults(z)}
 function letter(i){return'ABCDEFGH'[i]}
 function showQ(){const z=QZ;$('#qc').classList.toggle('scan',fxOn('fx_scan'));if(z.stopped||z.i>=z.list.length){endQuiz();return}const q=z.list[z.i];z.answered=false;z.pick=null;const l=LBY[q.l];
- let head='';if(z.mode==='enc'){head=`<div class="chead"><canvas id="qEn"></canvas><div class="who"><span class="eyebrow" style="color:var(--laser)">Hostile contact</span><b>${esc(z.title)}</b><span class="muted tiny">Answer correctly to destroy it</span></div><div class="hearts">${'⛨'.repeat(Math.max(0,P.ps.sh))}</div></div>`}
- else if(z.mode==='boss'){head=`<div class="chead"><canvas id="qEn"></canvas><div class="who"><span class="eyebrow" style="color:var(--laser)">Commander · ${esc(z.boss.p)}</span><b>${esc(z.title)}</b><div class="hpbar"><i id="qHp" style="width:${(z.hpFrac??1)*100}%"></i></div></div><div class="hearts">${'⛨'.repeat(Math.max(0,P.ps.sh))}</div></div>`}
+ let head='';if(z.mode==='enc'){head=`<div class="chead"><div class="who"><span class="eyebrow" style="color:var(--laser)">Hostile contact</span><b>${esc(z.title)}</b><span class="muted tiny">Answer correctly to strike it down</span></div><div class="hearts">${'⛨'.repeat(Math.max(0,P.ps.sh))}</div></div><canvas id="duel" class="duel" aria-hidden="true"></canvas>`}
+ else if(z.mode==='boss'){head=`<div class="chead"><div class="who"><span class="eyebrow" style="color:var(--laser)">Commander · ${esc(z.boss.p)}</span><b>${esc(z.title)}</b><div class="hpbar"><i id="qHp" style="width:${(z.hpFrac??1)*100}%"></i></div></div><div class="hearts">${'⛨'.repeat(Math.max(0,P.ps.sh))}</div></div><canvas id="duel" class="duel" aria-hidden="true"></canvas>`}
  else head=`<div class="chead sim"><div class="who"><span class="eyebrow">${z.mode==='off'?'Official question':'Simulation'}</span><b>${esc(z.title||'Practice')}</b><span class="muted tiny">Question ${z.i+1} of ${z.list.length}${z.exam?' · exam mode':''}</span></div><button class="btn" id="qQuit">End</button></div>`;
- const tags=`<div class="qmeta"><span class="tag">${q.l} ${esc(l.who)} · ${esc(l.t)}</span>${q.o?`<span class="tag off">OFFICIAL · ${esc(q.set)}</span>`:''}${S.qs[q.id]&&S.qs[q.id].l===0?'<span class="tag" style="color:var(--laser);border-color:var(--laser)">MISSED BEFORE</span>':''}</div>`;
+ const tags=`<div class="qmeta"><span class="tag">${q.l} ${esc(l.who)} · ${esc(l.t)}</span>${q.o?`<span class="tag off">OFFICIAL · ${esc(q.set)}</span>`:''}${q.ly?'<span class="tag" title="Low-yield stat trivia bonus pool">STAT TRIVIA · LOW YIELD</span>':''}${S.qs[q.id]&&S.qs[q.id].l===0?'<span class="tag" style="color:var(--laser);border-color:var(--laser)">MISSED BEFORE</span>':''}</div>`;
  const img=q.img&&IMG[q.img]?`<img class="qimg" src="${IMG[q.img]}" alt="Question image">`:'';
  let body;z.perm=null;if(q.t==='sa'){body=`<div class="choices"><button class="choice" id="saRev"><span class="lt">▶</span><span>Reveal the official answer</span></button></div><div id="saBox"></div>`}
  else{const keep=q.o||q.c.some(c=>/of the above|both|^true$|^false$/i.test(c));z.perm=keep?q.c.map((_,i)=>i):shuffle(q.c.map((_,i)=>i));body=`<div class="choices">${z.perm.map((oi,pos)=>`<button class="choice" data-i="${oi}"><span class="lt">${letter(pos)}</span><span>${q.c[oi]}</span></button>`).join('')}</div>`}
  $('#qc').innerHTML=head+`<div class="cbody">${tags}<div class="qtext">${q.q}</div>${img}${body}<div id="qFb"></div></div><div class="cfoot"><span class="combo" id="qCombo">${S.combo?'COMBO ×'+S.combo:''}</span><span class="reward" id="qRw"></span><button class="btn pri" id="qNext" hidden>Continue ▸</button></div>`;
  $('#quiz').scrollTop=0;
  const cv=$('#qEn');if(cv){if(z.mode==='boss')drawEnemy(cv,0,BOSSCOL(z.boss));else drawEnemy(cv,z.enemy)}
+ if(z.mode==='enc'||z.mode==='boss'){if(z.i===0)SFX.ignite();duelStart(z)}
  const qq=$('#qQuit');if(qq)qq.onclick=()=>{z.stopped=true;endQuiz()};
  if(q.t==='sa'){$('#saRev').onclick=()=>{$('#saRev').parentElement.remove();$('#saBox').innerHTML=`<div class="sa-ans"><div class="eyebrow">Official answer</div><div>${q.ans}</div><div class="cite">${esc(q.r)}</div></div><div class="row" style="margin-top:12px"><button class="btn pri" id="saY">I got it ✓</button><button class="btn red" id="saN">I missed it ✗</button></div>`;
    $('#saY').onclick=()=>answer(true);$('#saN').onclick=()=>answer(false)}}
@@ -4050,6 +4134,7 @@ function answer(ok,pick){const z=QZ;if(z.answered)return;z.answered=true;const q
  if(q.t!=='sa'){$$('.choice[data-i]').forEach(b=>{b.disabled=true;const i=+b.dataset.i;if(!z.exam){if(i===q.a)b.classList.add('right');else if(i===pick)b.classList.add('wrong')}else if(i===pick)b.style.borderColor='var(--amber)'})}
  else{$$('#saBox button').forEach(b=>b.disabled=true)}
  if(z.onAnswer)z.onAnswer(q,ok,{hit:f=>{z.hpFrac=f;const h=$('#qHp');if(h)h.style.width=f*100+'%';flash('#ffffff');if(fxOn('fx_shake'))shakeConsole()},hurt:()=>flash('#ff5468'),stop:()=>{z.stopped=true}});
+ if(z.mode==='enc'||z.mode==='boss')duelPlay(ok,z.mode==='enc'?ok:(ok&&z.hpFrac!=null&&z.hpFrac<=0));
  if(!z.exam&&q.t!=='sa'){const sec=q.s||(SEC[q.l]&&SEC[q.l][0]&&SEC[q.l][0].id);
   $('#qFb').innerHTML=`<div class="fb ${ok?'':'bad'}"><h4>${ok?'Correct':'Not quite'}: answer ${dl(q.a)}. ${q.c[q.a]}</h4><div>${q.e||''}</div><div class="cite">${esc(q.r||'')}</div>${sec&&!ok?`<button class="btn" style="margin-top:10px" id="qArch">Open Study Notes entry</button>`:''}</div>`;
   const qa=$('#qArch');if(qa)qa.onclick=()=>archivePopup(q.l,sec)}
@@ -4094,10 +4179,10 @@ function renderArchive(lid,sid){if(lid)archLec=lid;if(!archLec){archLec=(LEC.fin
 
 // ================= SIM ROOM =================
 function renderSim(){const el=$('#simLecs');if(!el.dataset.built){el.innerHTML=LEC.filter(l=>(QL[l.id]||[]).length).map(l=>`<label><input type="checkbox" value="${l.id}" ${l.fin?'':'checked'}><span>${l.id} ${esc(l.who)}: ${esc(l.t)}${l.fin?' (finals only)':''}</span></label>`).join('');el.dataset.built=1;el.onchange=simCount}simCount()}
-function simPool(){const ls=$$('#simLecs input:checked').map(i=>i.value);let pool=Q.filter(q=>ls.includes(q.l));const m=$('#simMode').value;
+function simPool(){const ls=$$('#simLecs input:checked').map(i=>i.value);const m=$('#simMode').value,lyOn=$('#simLY').checked||m==='ly';let pool=Q.filter(q=>ls.includes(q.l)&&(!q.ly||lyOn));if(m==='ly')pool=pool.filter(q=>q.ly);
  if(m==='unseen')pool=pool.filter(q=>!S.qs[q.id]);if(m==='missed')pool=pool.filter(q=>S.qs[q.id]&&S.qs[q.id].l===0);if(m==='off')pool=pool.filter(q=>q.o);return pool}
-function simCount(){const p=simPool();$('#simCount').textContent=`${p.length} questions match`}
-['simMode','simN'].forEach(id=>$('#'+id).onchange=simCount);
+function simCount(){const p=simPool();$('#simCount').textContent=`${p.length} questions match`;const ls=$$('#simLecs input:checked').map(i=>i.value);$('#simLYn').textContent=Q.filter(q=>q.ly&&ls.includes(q.l)).length}
+['simMode','simN','simLY'].forEach(id=>$('#'+id).onchange=simCount);
 $('#simAllOn').onclick=()=>{$$('#simLecs input').forEach(i=>i.checked=true);simCount()};$('#simAllOff').onclick=()=>{$$('#simLecs input').forEach(i=>i.checked=false);simCount()};
 $('#simGo').onclick=()=>{const p=simPool();if(!p.length){toast('No questions match those filters','bad');return}const n=+$('#simN').value;const m=$('#simMode').value;
  const list=m==='smart'?pickQs(p,n):shuffle(p).slice(0,n);runQuiz({mode:'sim',title:'Simulation · '+list.length+' Q',list:shuffle(list),exam:$('#simExam').checked})};
