@@ -896,7 +896,7 @@ addQ('3.03',[
  e:'Exam: increased AP diameter, hyperresonance, crackles, clubbing, expiratory wheezes, and <b>cyanosis (late sign)</b>.'},
 {q:'Chronic hypoxemia in CF can lead to which cardiac complication?',c:['Cor pulmonale','Aortic stenosis','Hypertrophic cardiomyopathy','Coarctation'],a:0,s:3,r:'3.03 Rosenberg slides 13, 16',
  e:'Cor pulmonale is associated with chronic hypoxemia. Thickened small pulmonary arteries cause pulmonary hypertension.'},
-{q:'What percentage of CF patients have pancreatic insufficiency?',c:['15–20%','50%','90%','100%'],a:2,s:4,r:'3.03 Rosenberg slide 17',
+{q:'Most patients with CF have which exocrine pancreatic status?',c:['Pancreatic insufficiency (the large majority)','Normal exocrine function in most','Pancreatic sufficiency in most; insufficiency is rare','Endocrine failure only, with preserved exocrine function'],a:0,s:4,r:'3.03 Rosenberg slide 17',
  e:'90% have pancreatic insufficiency. 15–20% is the meconium ileus figure.'},
 {q:'A CF patient with steatorrhea is most likely to develop a deficiency of:',c:['Vitamin C','Vitamin B12 only','Vitamins A, D, E, K','Folate'],a:2,s:4,r:'3.03 Rosenberg slide 17',
  e:'Fat malabsorption causes steatorrhea, fat-soluble vitamin (A, D, E, K) deficiency and failure to thrive. Protein malabsorption causes hypoproteinemia and edema.'},
@@ -1611,7 +1611,7 @@ addQ('3.09',[
  e:'Avoid decongestants, α-agonists (phenylephrine), nonselective β-agonists (epinephrine), tetracyclines/aminoglycosides/sulfonamides/FQs, live vaccines and iodinated contrast. Don\'t start or increase immunotherapy.'},
 {q:'PE accounts for approximately what proportion of maternal mortality in the US per Kelly?',c:['1%','5%','15%','40%'],a:2,s:5,r:'3.09 Kelly slide 24',
  e:'PE is a leading cause of maternal mortality (15%). Risk is 5× higher than in non-pregnant females.'},
-{q:'In pregnancy, DVT occurs in the LEFT leg in approximately:',c:['50%','65%','88–95%','100%'],a:2,s:5,r:'3.09 Kelly slides 26, 29',
+{q:'In pregnancy, DVT most often occurs in which leg?',c:['Left leg','Right leg','Both legs equally','Bilateral in most cases'],a:0,s:5,r:'3.09 Kelly slides 26, 29',
  e:'88–95% left leg, partly from May-Thurner compression (right iliac artery over the left iliac vein) exacerbated by pregnancy.'},
 {q:'Which coagulation change of pregnancy is listed?',c:['Decreased factor VIII','Protein S deficiency','Enhanced fibrinolysis','Decreased von Willebrand factor'],a:1,s:5,r:'3.09 Kelly slide 25',
  e:'Hypercoagulability: increased factors V, VIII, X and vWF. Protein S deficiency. IMPAIRED fibrinolysis.'},
@@ -2137,7 +2137,7 @@ addSec('3.14',[
 <tr><td>Acute onset<br><b>Löfgren syndrome</b><br>Stage I<br>No extrathoracic disease<br>Northern European heritage<br>Younger age</td><td>Slow onset<br><b>Lupus pernio</b><br>Stage III/IV, hypoxemic failure<br>Bony involvement<br>Black race<br>Onset age &gt;40<br>Pulmonary hypertension</td></tr></table></div>`}
 ]);
 addQ('3.14',[
-{q:'Sarcoidosis involves the lungs in approximately what percentage of cases?',c:['25%','50%','75%','90%'],a:3,s:1,r:'3.14 Kelly slide 3',
+{q:'Which organ is involved in the vast majority of sarcoidosis cases?',c:['Skin','Eyes','Heart','Lungs'],a:3,s:1,r:'3.14 Kelly slide 3',
  e:'"Affecting the lungs in 90% of cases." It is a multisystem granulomatous disorder of unknown cause and a diagnosis of exclusion.'},
 {q:'Which epidemiologic statement about sarcoidosis is correct per Kelly?',c:['More common in smokers','Male:female 2:1','More common in nonsmokers; female:male 2:1; >half diagnosed after age 40','Most common in Asian patients'],a:2,s:1,r:'3.14 Kelly slide 5',
  e:'More common in nonsmokers and with family history. F:M 2:1. More than half diagnosed after 40. In the US most common in Black, least in Hispanic and Asian.'},
@@ -2346,7 +2346,7 @@ addQ('3.17',[
  e:'Slide 8: acute mastoiditis, with fluid filling the air cells and the fine septations still present.'},
 {img:'d317_mr',q:'MR in a patient with mastoiditis: T2 axial (left) shows right mastoid signal, and venography (right) shows absent flow in the right transverse/sigmoid channel (arrow). Complication?',c:['Epidural abscess','Sigmoid sinus thrombosis','Labyrinthitis','Facial nerve palsy'],a:1,s:1,r:'3.17 DeLano slide 10',
  e:'Slide 10: "MR Mastoiditis – Sigmoid sinus thrombosis."'},
-{q:'Longitudinal temporal bone fractures account for approximately what proportion of temporal bone fractures?',c:['20%','50%','80%','95%'],a:2,s:2,r:'3.17 DeLano slide 13',
+{q:'The MOST common type of temporal bone fracture is:',c:['Transverse','Longitudinal','Isolated mastoid tip fracture','Petrous apex fracture'],a:1,s:2,r:'3.17 DeLano slide 13',
  e:'Longitudinal: 80% of temporal bone fractures, from lateral forces along the petrosquamous suture. 15–20% facial nerve involvement. EAC laceration is common.'},
 {q:'Per DeLano\'s mnemonic "Listen Carefully / To Senora", a TRANSVERSE temporal bone fracture typically causes:',c:['Conductive hearing loss only','Sensorineural hearing loss and facial nerve injury','No hearing loss','CSF rhinorrhea only'],a:1,s:2,r:'3.17 DeLano slide 14',
  e:'"To Senora" = Transverse, Sensorineural hearing loss and facial nerve injury. "Listen Carefully" = Longitudinal, Conductive. (Slides 11–12 captions are reversed and flagged in the archive.)'},
@@ -3365,7 +3365,7 @@ const LBY=Object.fromEntries(LEC.map(l=>[l.id,l]));
 const QBY=Object.fromEntries(Q.map(q=>[q.id,q]));
 // v10: pure epidemiology/prognosis stat trivia not tied to a lecture objective or official question.
 // Kept (facts stay in Study Notes) but pulled from planets, commanders, mastery and default Practice Quiz.
-const LOWYIELD=new Set(["q302_26","q305_1","q305_2","q305_3","q305_36","q307_15","q308_13","q309_16","q309_36","q311_27","q312_13","q314_15","q318_18","q318_25","q318_29","q318_34","q319_8","q319_16","q321_6","q321_21","q322_8","q323_1","q323_5","q323_21","q324_1","q324_18","q324_27","q324_30"]);Q.forEach(q=>{if(LOWYIELD.has(q.id)&&!q.o)q.ly=1});
+const LOWYIELD=new Set(["q302_26","q305_1","q305_2","q305_3","q305_36","q307_15","q308_13","q309_16","q309_36","q311_27","q312_13","q314_15","q318_18","q318_25","q318_29","q318_34","q319_8","q319_16","q321_6","q321_21","q322_8","q323_1","q323_5","q323_21","q324_1","q324_18","q324_27","q324_30","q301_10","q303_18","q303_26","q305_16","q306_25","q307_10","q307_12","q308_7","q314_9","q314_26","q315_1","q322_15","q324_8"]);Q.forEach(q=>{if(LOWYIELD.has(q.id)&&!q.o)q.ly=1});
 const QL={}; Q.forEach(q=>{if(!q.ly)(QL[q.l]=QL[q.l]||[]).push(q)});
 const isReady=l=>!l.pend && (QL[l.id]||[]).filter(q=>!q.o).length>=8 && (SEC[l.id]||[]).length>0;
 const EXAM_LECS=LEC.filter(l=>!l.fin);
