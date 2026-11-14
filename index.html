@@ -1129,6 +1129,7 @@ addSec('3.05',[
 <tr><td>Clues</td><td><b>Petechiae of the chest, axilla, neck</b>. Sudden SOB. Cerebral circulation at high risk</td><td><b>DIC almost universal</b>. Massive hemorrhage. Mortality <b>&gt;80%</b> (handout ~85%)</td><td><b>Churning murmur</b> over the precordium. Shock/death from <b>5 cc/kg</b></td></tr>
 <tr><td>Treatment</td><td><b>High-dose steroids, NOT heparin</b></td><td><b>Empty the uterus</b>. Manage DIC and maternal vitals</td><td><b>Left lateral decubitus</b> (air rises in the RV), then catheter (Swan-Ganz) aspiration. Thoracotomy with needle aspiration if arrested</td></tr></table></div>`}
 ]);
+const WT='<div class="tbl" style="margin:6px 0 10px"><table style="font-size:13px;border-collapse:collapse"><tr><th colspan=2 style="text-align:left;padding:3px 8px;border:1px solid var(--line)">Wells criteria (table provided)</th></tr>'+[['Clinical signs/symptoms of DVT','3'],['Alternative diagnosis less likely than PE','3'],['HR &gt;100','1.5'],['Immobilization ≥3 d or surgery in previous 4 wk','1.5'],['Previous PE/DVT','1.5'],['Hemoptysis','1'],['Malignancy','1']].map(r=>'<tr><td style="padding:3px 8px;border:1px solid var(--line)">'+r[0]+'</td><td style="padding:3px 8px;border:1px solid var(--line)">'+r[1]+'</td></tr>').join('')+'</table></div>';
 addQ('3.05',[
 {q:'What percentage of patients with PE have sudden death as their initial presentation?',c:['5%','8%','25%','30%'],a:2,s:1,r:'3.05 Hughes slide 5; handout p2',
  e:'25% present with sudden death. 8% is the treated case-fatality rate. 30% is mortality if missed/untreated.'},
@@ -1203,7 +1204,17 @@ addQ('3.05',[
 {q:'The amount of intravascular air that can cause shock or death per Hughes is about:',c:['0.5 cc/kg','1 cc/kg','5 cc/kg','20 cc/kg'],a:2,s:11,r:'3.05 Hughes slide 47',
  e:'"Shock or death from 5 cc/kg of air."'},
 {q:'Pulmonary angiography in the modern PE workup is:',c:['The first-line test','Rarely used','Required before thrombolysis','Used to calculate Wells'],a:1,s:3,r:'3.05 Hughes handout p4',
- e:'Pulmonary angiography: rarely used. CTA is timed via the antecubital vein. V/Q, echo and LE ultrasound are alternatives.'}
+ e:'Pulmonary angiography: rarely used. CTA is timed via the antecubital vein. V/Q, echo and LE ultrasound are alternatives.'},
+{q:WT+'A 52-year-old has sudden pleuritic chest pain and HR 108. There are no DVT signs, no recent surgery and no prior VTE, and you judge PE more likely than any alternative. Next step?',c:['D-dimer','Apply PERC','CT angiogram (or V/Q), skipping the D-dimer','Discharge with follow-up'],a:2,s:7,r:'3.05 Hughes slides 29–35; handout p7',
+ e:'Wells = 3 (alternative diagnosis less likely) + 1.5 (HR &gt;100) = <b>4.5 → PE likely</b> (two-tier ≥4.5). D-dimer is only useful if Wells &lt;4, and PERC only applies to low-risk patients, so go <b>straight to imaging</b>.'},
+{q:WT+'A 64-year-old has pleuritic pain, HR 92 and SpO₂ 97%. He had knee surgery 3 weeks ago. Musculoskeletal pain is more likely than PE. D-dimer is 0.60 (lab normal &lt;0.5). Next step?',c:['CT angiogram, because the D-dimer is above 0.5','No imaging: the D-dimer is normal for his age','LE Doppler','Repeat the D-dimer in 24 h'],a:1,s:7,r:'3.05 Hughes slides 33–36; handout p7',
+ e:'Wells = 1.5 (surgery within 4 wk) → <b>low risk</b>. He fails PERC (age ≥50, recent surgery), so check a D-dimer. <b>Age-adjusted cutoff = 0.01 × 64 = 0.64</b>. 0.60 is below it, so the D-dimer is negative and <b>no imaging</b> is needed.'},
+{q:WT+'A 45-year-old has a swollen, tender left calf and HR 112, and PE is your leading diagnosis. CT angiogram is NEGATIVE. Next step per Hughes?',c:['Stop: PE is ruled out','LE Doppler ultrasound','D-dimer','Repeat CT in 48 h'],a:1,s:7,r:'3.05 Hughes slide 35; handout p7',
+ e:'Wells = 3 (DVT signs) + 3 (PE most likely) + 1.5 (HR) = <b>7.5 → high</b>. If imaging is negative and the score is <b>&gt;6</b>, get a <b>LE Doppler</b>.'},
+{q:WT+'A 35-year-old has mild hemoptysis with a cough. HR 84, SpO₂ 98%, no leg findings and no other risk factors. Bronchitis is more likely than PE. D-dimer is 0.9 (normal &lt;0.5). Next step?',c:['No further testing: she is low risk','CT angiogram or V/Q scan','Start anticoagulation and discharge','LE Doppler only'],a:1,s:7,r:'3.05 Hughes slides 33–35; handout p6–7',
+ e:'Wells = 1 (hemoptysis) → <b>low risk</b>. She <b>fails PERC</b> (hemoptysis), so check a D-dimer. Wells &lt;4 with a <b>positive D-dimer → CT or V/Q</b>.'},
+{q:WT+'A woman at 34 weeks\' gestation has pleuritic pain, HR 96 and no leg findings. Another diagnosis is more likely than PE. D-dimer is 1.1. Using Hughes\' trimester-adjusted values, what does this D-dimer mean?',c:['Elevated: proceed to imaging','Normal for the third trimester: no imaging needed','Uninterpretable without a Wells score of 0','Normal only if she is under 50'],a:1,s:7,r:'3.05 Hughes slide 36; handout p7',
+ e:'Wells = 0 → low risk. Top-normal D-dimer: 1st trimester 0.75, 2nd 1.0, <b>3rd 1.25</b>. 1.1 is below 1.25, so it is <b>normal</b>. (Kelly\'s 3.09 lecture also covers the pregnancy YEARS approach.)'}
 ]);
 
 // 3.06 DeLano – Radiology: PE, infarction, pleural disease
@@ -3365,7 +3376,7 @@ const LBY=Object.fromEntries(LEC.map(l=>[l.id,l]));
 const QBY=Object.fromEntries(Q.map(q=>[q.id,q]));
 // v10: pure epidemiology/prognosis stat trivia not tied to a lecture objective or official question.
 // Kept (facts stay in Study Notes) but pulled from planets, commanders, mastery and default Practice Quiz.
-const LOWYIELD=new Set(["q302_26","q305_1","q305_2","q305_3","q305_36","q307_15","q308_13","q309_16","q309_36","q311_27","q312_13","q314_15","q318_18","q318_25","q318_29","q318_34","q319_8","q319_16","q321_6","q321_21","q322_8","q323_1","q323_5","q323_21","q324_1","q324_18","q324_27","q324_30","q301_10","q303_18","q303_26","q305_16","q306_25","q307_10","q307_12","q308_7","q314_9","q314_26","q315_1","q322_15","q324_8"]);Q.forEach(q=>{if(LOWYIELD.has(q.id)&&!q.o)q.ly=1});
+const LOWYIELD=new Set(["q302_26","q305_1","q305_2","q305_3","q305_36","q307_15","q308_13","q309_16","q309_36","q311_27","q312_13","q314_15","q318_18","q318_25","q318_29","q318_34","q319_8","q319_16","q321_6","q321_21","q322_8","q323_1","q323_5","q323_21","q324_1","q324_18","q324_27","q324_30","q301_10","q303_18","q303_26","q305_16","q306_25","q307_10","q307_12","q308_7","q314_9","q314_26","q315_1","q322_15","q324_8","q305_11"]);Q.forEach(q=>{if(LOWYIELD.has(q.id)&&!q.o)q.ly=1});
 const QL={}; Q.forEach(q=>{if(!q.ly)(QL[q.l]=QL[q.l]||[]).push(q)});
 const isReady=l=>!l.pend && (QL[l.id]||[]).filter(q=>!q.o).length>=8 && (SEC[l.id]||[]).length>0;
 const EXAM_LECS=LEC.filter(l=>!l.fin);
