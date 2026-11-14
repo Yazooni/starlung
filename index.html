@@ -4166,7 +4166,7 @@ function archivePopup(lid,sid){const sec=(SEC[lid]||[]).find(s=>s.id===sid);if(!
  document.body.appendChild(host);host.querySelector('button').onclick=()=>{markRead(sid);host.remove()};host.addEventListener('click',e=>{if(e.target===host)host.remove()})}
 function showResults(z){const n=z.res.length,c=z.res.filter(r=>r.ok).length;if(!n)return;
  openSheet(`<div class="eyebrow">${z.mode==='off'?'Official questions report':'Simulation report'}</div><h2 style="font-size:24px;margin:.2em 0">${c}/${n} correct · ${Math.round(c/n*100)}%</h2>
- ${z.res.filter(r=>!r.ok||z.exam).map(r=>{const q=r.q;return`<div style="border-top:1px solid var(--line);padding:10px 0"><div class="qmeta"><span class="tag">${q.l}</span>${r.ok?'<span class="tag" style="color:var(--ok)">correct</span>':'<span class="tag" style="color:var(--laser)">missed</span>'}</div><div style="font-size:14px">${q.q}</div>${q.t==='sa'?`<div class="sa-ans" style="font-size:13.5px">${q.ans}</div>`:`<div style="font-size:13.5px;margin-top:6px">${r.pick!=null?`You chose <b>${r.pl}. ${q.c[r.pick]}</b> · `:''}Answer <b>${r.al}. ${q.c[q.a]}</b></div><div class="fb ${r.ok?'':'bad'}" style="font-size:13.5px">${q.e||''}</div>`}<div class="cite">${esc(q.r||'')}</div></div>`}).join('')}
+ ${z.res.filter(r=>!r.ok||z.exam).map(r=>{const q=r.q;return`<div data-abx style="border-top:1px solid var(--line);padding:10px 0"><div class="qmeta"><span class="tag">${q.l}</span>${r.ok?'<span class="tag" style="color:var(--ok)">correct</span>':'<span class="tag" style="color:var(--laser)">missed</span>'}</div><div style="font-size:14px">${q.q}</div>${q.t==='sa'?`<div class="sa-ans" style="font-size:13.5px">${q.ans}</div>`:`<div style="font-size:13.5px;margin-top:6px">${r.pick!=null?`You chose <b>${r.pl}. ${q.c[r.pick]}</b> · `:''}Answer <b>${r.al}. ${q.c[q.a]}</b></div><div class="fb ${r.ok?'':'bad'}" style="font-size:13.5px">${q.e||''}</div>`}<div class="cite">${esc(q.r||'')}</div></div>`}).join('')}
  <div class="row" style="margin-top:12px"><button class="btn pri" onclick="closeSheet()">Done</button></div>`)}
 
 // ================= OFFICIAL TRANSMISSIONS =================
@@ -4398,4 +4398,113 @@ const _renderLog=renderLog;renderLog=function(){_renderLog();const box=$('#saveB
 (async()=>{if(!WEB.sb){setSync('local','Offline');$('#auErr').textContent='Could not load the save system. Check your connection and reload.';return}
  setAuthMode('new');try{const {data}=await WEB.sb.auth.getSession();if(data&&data.session){await startSession(data.session);return}}catch(e){}
  setSync('saving','Sign in to save')})();
-</script></body></html>
+</script>
+<script>
+// v14 abbreviation helper: spells out non-obvious abbreviations ONCE per question / note card at display time.
+// Source text (incl. verbatim official questions) is untouched. Obvious ones (CT, CXR, COPD, DVT, PE, IV, ABG...) are not expanded.
+(function(){
+const lecIs=(c,...ls)=>ls.includes(c.lec);
+const ABX={
+// pulmonary vascular / PE
+'PH':'pulmonary hypertension','PAH':'pulmonary arterial hypertension','IPAH':'idiopathic PAH','HPAH':'heritable PAH',
+'CTEPH':'chronic thromboembolic pulmonary hypertension','PERC':'PE rule-out criteria','CTA':'CT angiography','CTPA':'CT pulmonary angiography',
+'RHC':'right heart catheterization','PVR':'pulmonary vascular resistance','SVR':'systemic vascular resistance','mPAP':'mean pulmonary artery pressure',
+'PCWP':'pulmonary capillary wedge pressure','PASP':'pulmonary artery systolic pressure','WU':'Wood units','RHF':'right heart failure','LHF':'left heart failure',
+'RVH':'right ventricular hypertrophy','LVH':'left ventricular hypertrophy','TR':'tricuspid regurgitation','LSB':'left sternal border',
+'HFpEF':'heart failure with preserved ejection fraction','HFrEF':'heart failure with reduced ejection fraction','GDMT':'guideline-directed medical therapy',
+'ARNI':'angiotensin receptor–neprilysin inhibitor','MRA':'mineralocorticoid receptor antagonist','EP':'electrophysiology','NYHA':'New York Heart Association',
+'CPET':'cardiopulmonary exercise testing','ERAs':'endothelin receptor antagonists','ACEP':'American College of Emergency Physicians',
+'LE':'lower extremity','AFE':'amniotic fluid embolism','LA':'left atrium',
+'PA':c=>{if(/^\s*(chest|film|view|projection|\/\s*lat|,\s*lat|and lat)/i.test(c.post)||/\bon\s*$/.test(c.pre)||/\(\s*$/.test(c.pre)&&/^\/lat/i.test(c.post))return 'posteroanterior';
+  if(c.node==='PA'||/RV\/\s*$/.test(c.pre)||/^\s*(pressure|systolic|tree|side|dilat|enlarg|catheter)/i.test(c.post))return 'pulmonary artery';return null},
+'RA':c=>/\bon\s*$/.test(c.pre)?'room air':(c.node==='RA'?'right atrium':'rheumatoid arthritis'),
+'CO':c=>lecIs(c,'3.09')?'cardiac output':null,
+// pediatrics / neonatal
+'BPD':'bronchopulmonary dysplasia','RDS':'respiratory distress syndrome','NRDS':'neonatal respiratory distress syndrome','TTN':'transient tachypnea of the newborn',
+'TEF':'tracheoesophageal fistula','EA':'esophageal atresia','CPAM':'congenital pulmonary airway malformation','CDH':'congenital diaphragmatic hernia',
+'CLE':'congenital lobar emphysema','MAS':'meconium aspiration syndrome','PPHN':'persistent pulmonary hypertension of the newborn','PDA':'patent ductus arteriosus',
+'PMA':'postmenstrual age','GA':'gestational age','CS':'cesarean section','DIOS':'distal intestinal obstruction syndrome','CHD':'congenital heart disease',
+'CLD':'chronic lung disease','BMT':'bone marrow transplant','PCD':'primary ciliary dyskinesia','RAD':'reactive airway disease','VCD':'vocal cord dysfunction',
+'mAPI':'modified Asthma Predictive Index','HMPV':'human metapneumovirus','HAPE':'high-altitude pulmonary edema','FB':'foreign body','FBs':'foreign bodies',
+'SABA':'short-acting β-agonist','LABA':'long-acting β-agonist','LABAs':'long-acting β-agonists','LAMA':'long-acting muscarinic antagonist',
+'ICS':'inhaled corticosteroid','LTRA':'leukotriene receptor antagonist','SMART':'single maintenance and reliever therapy',
+'PE':c=>/(altitude|neurogenic)\s*$/i.test(c.pre)?'pulmonary edema':null,
+// critical care / ventilation
+'NIPPV':'noninvasive positive pressure ventilation','VILI':'ventilator-induced lung injury','DAD':'diffuse alveolar damage','NC':'nasal cannula',
+'NRB':'non-rebreather mask','HFNC':'high-flow nasal cannula','BVM':'bag-valve-mask','LMA':'laryngeal mask airway','ETT':'endotracheal tube','ETTs':'endotracheal tubes',
+'SIMV':'synchronized intermittent mandatory ventilation','PSV':'pressure support ventilation','PCV':'pressure control ventilation','PRVC':'pressure-regulated volume control',
+'VAP':'ventilator-associated pneumonia','SBT':'spontaneous breathing trial','RSBI':'rapid shallow breathing index','VE':'minute ventilation','DP':'driving pressure',
+'Pplat':'plateau pressure','IBW':'ideal body weight','PBW':'predicted body weight','EPAP':'expiratory positive airway pressure','IPAP':'inspiratory positive airway pressure',
+'BPAP':'bilevel positive airway pressure','HFOV':'high-frequency oscillatory ventilation','NMB':'neuromuscular blockade','VV-ECMO':'venovenous ECMO',
+'ATS':'American Thoracic Society','EVALI':'e-cigarette or vaping product use–associated lung injury','TRALI':'transfusion-related acute lung injury',
+'ALI':'acute lung injury','CAP':'community-acquired pneumonia','GGO':'ground-glass opacity','AECOPD':'acute exacerbation of COPD',
+'PiO₂':'inspired O₂ partial pressure','PiO2':'inspired O₂ partial pressure','PAO₂':'alveolar O₂ partial pressure','ETCO₂':'end-tidal CO₂',
+'RSI':'rapid sequence intubation','AF':'atrial fibrillation','RVR':'rapid ventricular response','AMS':'altered mental status','PTX':'pneumothorax',
+'SCM':'sternocleidomastoid',
+// pregnancy / TB / anticoagulation
+'IGRA':'interferon-gamma release assay','TST':'tuberculin skin test','INH':'isoniazid','RIF':'rifampin','EMB':'ethambutol','PZA':'pyrazinamide',
+'LTBI':'latent TB infection','LMWH':'low-molecular-weight heparin','UFH':'unfractionated heparin','DOACs':'direct oral anticoagulants',
+'VZIG':'varicella-zoster immune globulin','IUGR':'intrauterine growth restriction','FQs':'fluoroquinolones',
+// pharm
+'NE':c=>lecIs(c,'3.13')?'norepinephrine':(lecIs(c,'3.23','3.24')?'neuroendocrine':null),'NET':'norepinephrine transporter','COMT':'catechol-O-methyltransferase',
+'MAO':'monoamine oxidase','MAOI':'monoamine oxidase inhibitor','MAOIs':'monoamine oxidase inhibitors','TCA':'tricyclic antidepressant','TCAs':'tricyclic antidepressants',
+'DXM':'dextromethorphan','BBB':'blood–brain barrier','BPH':'benign prostatic hyperplasia','AEs':'adverse effects','SL':'sublingual','SC':'subcutaneous',
+'PCP-like':'PCP = phencyclidine','PCP':'Pneumocystis pneumonia','PJP':'Pneumocystis jirovecii pneumonia',
+// sarcoid / calcium
+'APC':'antigen-presenting cell','LP':'lumbar puncture','CN':'cranial nerve','HPT':'hyperparathyroidism','VDR':'vitamin D receptor','MTX':'methotrexate',
+'PTHrP':'PTH-related peptide',
+// ENT / airway infections
+'FESS':'functional endoscopic sinus surgery','EAC':'external auditory canal','URI':'upper respiratory infection','PCN':'penicillin',
+'GAS':c=>lecIs(c,'3.18')?'group A Streptococcus':null,'GBS':'group B Streptococcus','TIG':'tetanus immune globulin','DFA':'direct fluorescent antibody',
+'AAP':'American Academy of Pediatrics','HCWs':'health care workers','RUE':'right upper extremity','LTB':'laryngotracheobronchitis','PEP':'post-exposure prophylaxis',
+// ILD / occupational
+'ILD':'interstitial lung disease','ILDs':'interstitial lung diseases','IPF':'idiopathic pulmonary fibrosis','UIP':'usual interstitial pneumonia',
+'NSIP':'nonspecific interstitial pneumonia','COP':'cryptogenic organizing pneumonia','LIP':'lymphocytic interstitial pneumonia','DIP':'desquamative interstitial pneumonia',
+'AIP':'acute interstitial pneumonia','RB-ILD':'respiratory bronchiolitis–associated ILD','CTD':'connective tissue disease','CTD-ILD':'connective tissue disease–associated ILD',
+'HRCT':'high-resolution CT','DLCO':'diffusing capacity for carbon monoxide','BAL':'bronchoalveolar lavage','VATS':'video-assisted thoracoscopic surgery',
+'HP':'hypersensitivity pneumonitis','CWP':'coal workers\' pneumoconiosis','PMF':'progressive massive fibrosis','RADS':'reactive airways dysfunction syndrome',
+'BAPE':'benign asbestos pleural effusion','LAM':'lymphangioleiomyomatosis','MCTD':'mixed connective tissue disease','NF':'neurofibromatosis','MW':'molecular weight',
+'NTM':'nontuberculous mycobacteria','DOE':'dyspnea on exertion','GVHD':'graft-versus-host disease','TKI':'tyrosine kinase inhibitor','GPA':'granulomatosis with polyangiitis',
+'RB':c=>lecIs(c,'3.24')?'retinoblastoma tumor-suppressor gene':null,
+// pleural
+'TG':'triglycerides','ULN':'upper limit of normal','AFB':'acid-fast bacilli','PMN':'polymorphonuclear neutrophils','BPF':'bronchopleural fistula',
+// neoplasia
+'SCLC':'small cell lung cancer','NSCLC':'non–small cell lung cancer','SCC':'squamous cell carcinoma','LCC':'large cell carcinoma','AIS':'adenocarcinoma in situ',
+'MIA':'minimally invasive adenocarcinoma','AAH':'atypical adenomatous hyperplasia','CIS':'carcinoma in situ','IHC':'immunohistochemistry',
+'TTF-1':'thyroid transcription factor-1','NSE':'neuron-specific enolase','TBNA':'transbronchial needle aspiration','FNA':'fine-needle aspiration',
+'TNAB':'transthoracic needle aspiration biopsy','HPO':'hypertrophic pulmonary osteoarthropathy','AVM':'arteriovenous malformation',
+'ER':c=>/\bthe\s*$/i.test(c.pre)?null:(lecIs(c,'3.24')?'estrogen receptor':null)
+};
+// never expand these in a stem/choices (they would give the answer away); explanations and notes still get them
+const NOQ=new Set(['SMART','TRALI']);
+const keys=Object.keys(ABX).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\\/-]/g,'\\$&'));
+const RE=new RegExp('(?<![A-Za-z0-9\\-])('+keys.join('|')+')(?![A-Za-z0-9₀-₉\\-])','g');
+const SEL='.cbody,.tome article,.sheet .tome,[data-abx]';
+const SKIP='.qmeta,.cite,.tag,.eyebrow,h2,.abx,.src,textarea,script,style,.lt,.reward,.combo,.cfoot,button.btn';
+function lecOf(root){let t='';const tg=root.querySelector('.qmeta .tag');if(tg)t=tg.textContent;else{const sh=root.closest('.sheet,#aBody');const eb=sh&&sh.querySelector('.eyebrow');if(eb)t=eb.textContent}const m=t.match(/(3\.\d\d|P4)/);return m?m[1]:''}
+function run(root){
+  const lec=lecOf(root);let full=root.textContent.toLowerCase();
+  const isQ=root.matches('.cbody,[data-abx]');const qt=root.querySelector('.qtext');const stands=!!qt&&/stands for/i.test(qt.textContent);
+  const done=new Set();const nodes=[];const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode())){if(!n.nodeValue.trim())continue;const p=n.parentElement;if(!p||p.closest(SKIP))continue;nodes.push(n)}
+  for(const node of nodes){
+    const txt=node.nodeValue;const inFb=!!node.parentElement.closest('.fb,.sa-ans,#qFb,#saBox');const ins=[];let m;RE.lastIndex=0;
+    while((m=RE.exec(txt))){const k=m[1],i=m.index,pre=txt.slice(Math.max(0,i-24),i),post=txt.slice(i+k.length,i+k.length+24);
+      const v=ABX[k];const exp=typeof v==='function'?v({lec,pre,post,node:txt.trim()}):v;if(!exp)continue;
+      const dk=k+'|'+exp;if(done.has(dk))continue;
+      if(/^\s*\(/.test(post)||(/\(\s*$/.test(pre)&&/^\s*\)/.test(post))||full.includes(exp.toLowerCase())){done.add(dk);continue}
+      if(isQ&&!inFb&&(stands||NOQ.has(k)))continue;
+      done.add(dk);full+=' '+exp.toLowerCase();ins.push([i+k.length,exp])}
+    for(let j=ins.length-1;j>=0;j--){const [pos,exp]=ins[j];const rest=node.splitText(pos);const sp=document.createElement('span');sp.className='abx';sp.textContent=' ('+exp+')';rest.parentNode.insertBefore(sp,rest)}
+  }
+}
+window.ABX_RUN=run;
+const obs=new MutationObserver(ms=>{const set=new Set();for(const m of ms)for(const a of m.addedNodes){
+  if(a.nodeType===1){if(a.classList.contains('abx'))continue;const c=a.closest(SEL);if(c)set.add(c);a.querySelectorAll(SEL).forEach(x=>set.add(x))}
+  else if(a.nodeType===3&&a.parentElement){const c=a.parentElement.closest(SEL);if(c)set.add(c)}}
+  if(!set.size)return;obs.disconnect();try{set.forEach(run)}catch(e){console.warn('abx',e)}obs.observe(document.body,{childList:true,subtree:true})});
+obs.observe(document.body,{childList:true,subtree:true});
+const st=document.createElement('style');st.textContent='.abx{color:var(--dim);font-size:.92em}';document.head.appendChild(st);
+})();
+</script>
+</body></html>
